@@ -1,0 +1,93 @@
+---
+title: "Multiple Linear Regression - 50 Startups"
+author: "Priyanka Mhatre"
+date: "February 22, 2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Dataset: 50_Startups.csv has information about 50 startups and their expenses, location and profits.
+# Task:    Predict the profit of a startup from features like State and expenses on RnD, Admin, Marketing. 
+# Target users : Investures who want to invest in profitable startups
+
+# Load data set
+```{r}
+dataset = read.csv('50_Startups.csv')
+head(dataset)
+summary(dataset)
+```
+
+# Handle categorical data
+
+```{r}
+dataset$State = factor( dataset$State,
+                        levels = c('New York','California','Florida'),
+                        labels = c(1,2,3))
+head(dataset)
+```
+
+# Train test split
+```{r}
+library(caTools)
+set.seed(123)
+split = sample.split(dataset$Profit, SplitRatio = 0.8)
+training_set = subset(dataset, split == TRUE)
+test_set = subset(dataset, split == FALSE)
+```
+
+# Fit a multiple linear regression model
+
+```{r}
+regressor = lm(formula = Profit ~ ., #. indicates all independent variables
+               data = training_set)
+summary(regressor)
+y_pred_all = predict(regressor, test_set)
+y_pred_all
+```
+
+## Since only R.D.Spend is a statistically significant variable, lets drop all other variables and check the results.
+
+```{r}
+regressor1 = lm(formula = Profit ~ R.D.Spend,
+               data = training_set)
+summary(regressor1)
+y_pred1 = predict(regressor1, test_set)
+y_pred1
+```
+There is a difference in the predicted values of y if we remove all oher variables. Lets try backward elimination to see whether any other variables become statistically significant as we drop predictors one by one.
+
+# Backward Elimination
+
+It is better to use full dataset for this analysis to get better results.
+
+```{r}
+#colnames(dataset)
+regressor = lm(formula = Profit ~ R.D.Spend + Administration + Marketing.Spend + State,
+               data = dataset) 
+summary(regressor)
+```
+
+Dropping State as both State2 and State 3 dummy variables have a very high p-value
+```{r}
+regressor = lm(formula = Profit ~ R.D.Spend + Administration + Marketing.Spend,
+               data = dataset) 
+summary(regressor)
+```
+
+Dropping Administration as it has a very high p-value.
+
+```{r}
+regressor = lm(formula = Profit ~ R.D.Spend + Marketing.Spend,
+               data = dataset) 
+summary(regressor)
+```
+
+Dropping Marketing.Spend as it has a slightly higher p-value.
+
+```{r}
+regressor = lm(formula = Profit ~ R.D.Spend,
+               data = dataset) 
+summary(regressor)
+```
